@@ -687,7 +687,7 @@ class ForceMerge(Runner):
 
         # Get parameters for JFR recording
         host = params.get("jfr.host", "localhost")  # Default host
-        file_path = params.get("jfr.file_path", "/Users/rishma/ws/recordings")  # Default file path
+        file_path = params.get("jfr.file_path", "/Users/rishma/ws/recordings/")  # Default file path
 
         # Extract PID using pgrep
         pid_command = f'ssh {host} ' if host != "localhost" else ""

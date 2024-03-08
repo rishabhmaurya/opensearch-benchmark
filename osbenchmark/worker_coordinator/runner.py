@@ -687,8 +687,12 @@ class ForceMerge(Runner):
 
         # Get parameters for JFR recording
         host = params.get("jfr.host", "localhost")  # Default host
-        pid = params.get("jfr.pid", "58324")  # Default PID
         file_path = params.get("jfr.file_path", "/Users/rishma/ws/recordings")  # Default file path
+
+        # Extract PID using pgrep
+        pid_command = f'ssh {host} ' if host != "localhost" else ""
+        pid_command += 'pgrep -f "java.*opensearch-"'
+        pid = subprocess.run(pid_command, shell=True, capture_output=True, text=True).stdout.strip()
 
         recording_name = self.start_jfr_recording(host, pid)
 

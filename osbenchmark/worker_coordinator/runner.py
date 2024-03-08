@@ -31,6 +31,8 @@ import re
 import sys
 import time
 import types
+import subprocess
+from datetime import datetime
 from collections import Counter, OrderedDict
 from copy import deepcopy
 from enum import Enum
@@ -682,6 +684,14 @@ class ForceMerge(Runner):
         max_num_segments = params.get("max-num-segments")
         mode = params.get("mode")
         merge_params = self._default_kw_params(params)
+
+        # Get parameters for JFR recording
+        host = params.get("jfr.host", "localhost")  # Default host
+        pid = params.get("jfr.pid", "58324")  # Default PID
+        file_path = params.get("jfr.file_path", "/Users/rishma/ws/recordings")  # Default file path
+
+        recording_name = self.start_jfr_recording(host, pid)
+
         if max_num_segments:
             merge_params["max_num_segments"] = max_num_segments
         if mode == "polling":
@@ -704,8 +714,31 @@ class ForceMerge(Runner):
             await opensearch.indices.forcemerge(**merge_params)
             request_context_holder.on_client_request_end()
 
+        self.stop_jfr_recording(recording_name, host, pid, file_path)
+
     def __repr__(self, *args, **kwargs):
         return "force-merge"
+
+    def start_jfr_recording(self, host, pid):
+        try:
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+            recording_name = f"ForceMergeRecording_{timestamp}"
+            ssh_command = f'ssh {host}' if host != "localhost" else ""
+            command = f'{ssh_command} jcmd {pid} JFR.start name={recording_name} settings=default'
+            subprocess.run(command, shell=True, check=True)
+            self.logger.info("JFR recording started.")
+            return recording_name
+        except Exception as e:
+            self.logger.error(f"Error starting JFR recording: {e}")
+
+    def stop_jfr_recording(self, recording_name, host, pid, file_path):
+        try:
+            ssh_command = f'ssh {host}' if host != "localhost" else ""
+            command = f'{ssh_command} jcmd {pid} JFR.dump name={recording_name} filename={file_path+recording_name}'
+            subprocess.run(command, shell=True, check=True)
+            self.logger.info("JFR recording stopped.")
+        except Exception as e:
+            self.logger.error(f"Error stopping JFR recording: {e}")
 
 
 class IndicesStats(Runner):

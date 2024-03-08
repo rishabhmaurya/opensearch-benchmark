@@ -726,7 +726,7 @@ class ForceMerge(Runner):
     def start_jfr_recording(self, host, pid):
         try:
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
-            recording_name = f"ForceMergeRecording_{timestamp}"
+            recording_name = f"ForceMergeRecording_{timestamp}.jfr"
             ssh_command = f'ssh {host}' if host != "localhost" else ""
             command = f'{ssh_command} jcmd {pid} JFR.start name={recording_name} settings=default'
             subprocess.run(command, shell=True, check=True)
